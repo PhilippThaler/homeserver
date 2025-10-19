@@ -1,0 +1,38 @@
+services:
+  vaultwarden:
+    container_name: vaultwarden
+    image: vaultwarden/server:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      ADMIN_TOKEN: ${BITWARDEN_ADMIN_TOKEN}
+      DATABASE_URL: ${BITWARDEN_DATABASE_URL}
+      DISABLE_ADMIN_TOKEN: ${BITWARDEN_DISABLE_ADMIN_TOKEN}
+      DOMAIN: ${BITWARDEN_DOMAIN}
+      ENABLE_DB_WAL: ${BITWARDEN_ENABLE_DB_WAL}
+      INVITATIONS_ALLOWED: ${BITWARDEN_INVITATIONS_ALLOWED}
+      SHOW_PASSWORD_HINT: ${BITWARDEN_SHOW_PASSWORD_HINT}
+      SIGNUPS_ALLOWED: ${BITWARDEN_SIGNUPS_ALLOWED}
+      SIGNUPS_VERIFY: ${BITWARDEN_SIGNUPS_VERIFY}
+      WEBSOCKET_ENABLED: ${BITWARDEN_WEBSOCKET_ENABLE}
+    ports:
+      - ${BITWARDEN_PORT_80}:80
+    volumes:
+      - ${DOCKERCONFDIR}/vaultwarden:/data
+    depends_on:
+      - postgres
+  nextcloud:
+    container_name: nextcloud
+    image: lscr.io/linuxserver/nextcloud:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${NEXTCLOUD_PORT_443}:443
+    volumes:
+      - ${DOCKERCONFDIR}/nextcloud:/config
+      - ${DOCKERSTORAGEDIR}/nextcloud:/data
+    depends_on:
+      - postgres
+      - redis

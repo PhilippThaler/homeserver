@@ -1,0 +1,113 @@
+services:
+  alloy:
+    container_name: alloy
+    image: grafana/alloy:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      DOCKER_HOST: tcp://socket-proxy:2375
+    ports:
+      - 12345:12345
+    volumes:
+      - ${DOCKERCONFDIR}/alloy:/etc/alloy
+      - ${DOCKERCONFDIR}/swag/log:/var/log/apps/swag
+      - /mnt/data/docker/containers:/var/lib/docker/containers:ro
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy --disable-reporting
+    networks:
+      - default
+    depends_on:
+      - loki
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    user: ${PUID}:${PGID}
+    environment:
+      GF_INSTALL_PLUGINS: ${GRAFANA_GF_INSTALL_PLUGINS}
+    ports:
+      - ${GRAFANA_PORT_3000}:3000
+    volumes:
+      - ${DOCKERCONFDIR}/grafana/grafana.ini:/etc/grafana/grafana.ini
+      - ${DOCKERCONFDIR}/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    networks:
+      - default
+    depends_on:
+      - postgres
+      - loki
+      - prometheus
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    user: root
+    ports:
+      - 3100:3100
+    volumes:
+      - ${DOCKERCONFDIR}/loki/config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/tmp/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - default
+  node-exporter:
+    container_name: node-exporter
+    image: prom/node-exporter:latest
+    ports:
+      - 9100:9100
+    volumes:
+      - /:/host:ro,rslave
+    command:
+       - --path.rootfs=/host
+       - --path.procfs=/host/proc
+       - --path.sysfs=/host/sys
+       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - default
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - 9090:9090
+    volumes:
+      - ${DOCKERCONFDIR}/prometheus/config.yaml:/etc/prometheus/prometheus.yaml
+      - prometheus-data:/prometheus
+    command: --config.file=/etc/prometheus/prometheus.yaml --web.enable-remote-write-receiver
+    networks:
+     - default
+  uptime-kuma:
+    container_name: uptime-kuma
+    image: louislam/uptime-kuma
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    ports: 
+      - 3001:3001
+    volumes:
+      - ${DOCKERCONFDIR}/uptime-kuma:/app/data
+    networks:
+      proxy-net:
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      DOCKER_HOST: tcp://socket-proxy:2375
+      WATCHTOWER_CLEANUP: "true"
+    networks:
+      - default
+    depends_on:
+      - socket-proxy
+volumes:
+  loki-data:
+  prometheus-data:
+  grafana-data:

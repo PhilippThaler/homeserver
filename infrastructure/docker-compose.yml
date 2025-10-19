@@ -1,0 +1,305 @@
+services:
+  cloudflareddns:
+    container_name: cloudflareddns
+    image: favonia/cloudflare-ddns:latest
+    user: ${PUID}:${PGID}
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLAREDDNS_API_TOKEN}
+      IP4_DOMAINS: ${CLOUDFLAREDDNS_DOMAINS}
+      WAF_LISTS: ${CLOUDFLAREDDNS_WAF_LISTS}
+      EMOJI: 'false'
+    networks:
+      - default
+  filebrowser:
+    container_name: filebrowser
+    image: filebrowser/filebrowser
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    user: 33:33
+    ports:
+      - 8088:80
+    volumes:
+      - ${DOCKERCONFDIR}/filebrowser/config:/config
+      - ${DOCKERCONFDIR}/filebrowser/data:/database
+      - ${DOCKERCONFDIR}/wordpress:/srv
+    networks:
+      - default
+  gluetun:
+    container_name: gluetun
+    image: qmcgaw/gluetun
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      VPN_SERVICE_PROVIDER: ${VPN_PROV}
+      VPN_TYPE: ${GLUETUN_VPN_TYPE}
+      WIREGUARD_PRIVATE_KEY: ${GLUETUN_WIREGUARD_PRIVATE_KEY}
+      WIREGUARD_PRESHARED_KEY: ${GLUETUN_WIREGUARD_PRESHARED_KEY}
+      WIREGUARD_ADDRESSES: ${GLUETUN_WIREGUARD_ADDRESSES}
+      SERVER_REGIONS: ${GLUETUN_SERVER_REGIONS}
+      FIREWALL_VPN_INPUT_PORTS: ${WIREGUARD_PORT}
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+  mariadb:
+    container_name: mariadb
+    image: mariadb
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    ports:
+      - 3306:3306
+    volumes:
+      - ${DOCKERCONFDIR}/mariadb:/var/lib/mysql
+    networks:
+      - default
+  phpmyadmin:
+    container_name: phpmyadmin
+    image: phpmyadmin:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      PMA_ARBITRARY: 1
+    ports:
+      - ${PHPMYADMIN_PORT_80}:80
+    networks:
+      - default
+  pihole:
+    container_name: pihole
+    image: pihole/pihole
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    dns:
+      - 127.0.0.1
+      - ${NS1}
+      - ${NS2}
+    environment:
+      DNS1: ${NS1}
+      DNS2: ${NS2}
+      ServerIP: ${PIHOLE_SERVERIP}
+      WEBPASSWORD: ${PIHOLE_WEBPASSWORD}
+      FTLCONF_dns_listeningMode: 'all'
+    ports:
+      - ${PIHOLE_PORT_53}:53/tcp
+      - ${PIHOLE_PORT_53}:53/udp
+      - ${PIHOLE_PORT_67}:67/udp
+      - ${PIHOLE_PORT_80}:80/tcp
+      - ${PIHOLE_PORT_443}:443/tcp
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ${DOCKERCONFDIR}/pihole/pihole:/etc/pihole
+      - ${DOCKERCONFDIR}/pihole/dnsmasq.d:/etc/dnsmasq.d
+    cap_add:
+      - NET_ADMIN
+    networks:
+      proxy-net:
+        ipv4_address: 172.20.0.5
+      lan-net:
+  postgres:
+    container_name: postgres
+    image: timescale/timescaledb:latest-pg14
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /home/postgres/pgdata/data
+    volumes:
+      - ${DOCKERCONFDIR}/postgres:/home/postgres
+    ports:
+      - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          cpus: '3'
+          memory: 4096M
+        reservations:
+          cpus: '2'
+          memory: 2048M
+    networks:
+      - default
+  redis:
+    container_name: redis
+    image: redis:8.2-alpine
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    user: 999:999
+    volumes:
+      - ${DOCKERCONFDIR}/redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - redis_data:/data
+    ports:
+      - 6379:6379
+    command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
+    networks:
+      - default
+  samba:
+    container_name: samba
+    image: dperson/samba
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      NMBD: ${SAMBA_NMBD}
+      SHARE: ${SAMBA_SHARENAME};/${SAMBA_SHARENAME};yes;no;no;all;${SAMBA_USERNAME}
+      USER: ${SAMBA_USERNAME};${SAMBA_PASSWORD}
+      WORKGROUP: ${SAMBA_WORKGROUP}
+    ports:
+      - ${SAMBA_PORT_137}:137/udp
+      - ${SAMBA_PORT_138}:138/udp
+      - ${SAMBA_PORT_139}:139/tcp
+      - ${SAMBA_PORT_445}:445/tcp
+    volumes:
+      - ${DOCKERCONFDIR}:/share/config
+      - ${DOCKERSTORAGEDIR}:/share/storage
+    networks:
+      - default
+  socket-proxy:
+    container_name: socket-proxy
+    image: lscr.io/linuxserver/socket-proxy:latest
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      - ALLOW_START=1 #optional
+      - ALLOW_STOP=1 #optional
+      - ALLOW_RESTARTS=1 #optional
+      - AUTH=1 #optional
+      - BUILD=1 #optional
+      - COMMIT=1 #optional
+      - CONFIGS=1 #optional
+      - CONTAINERS=1 #optional
+      - DISABLE_IPV6=1 #optional
+      - DISTRIBUTION=1 #optional
+      - EVENTS=1 #optional
+      - EXEC=1 #optional
+      - IMAGES=1 #optional
+      - INFO=1 #optional
+      - LOG_LEVEL=info #optional
+      - NETWORKS=1 #optional
+      - NODES=1 #optional
+      - PING=1 #optional
+      - PLUGINS=1 #optional
+      - POST=1 #optional
+      - SECRETS=1 #optional
+      - SERVICES=1 #optional
+      - SESSION=1 #optional
+      - SWARM=1 #optional
+      - SYSTEM=1 #optional
+      - TASKS=1 #optional
+      - VERSION=1 #optional
+      - VOLUMES=1 #optional
+    ports:
+      - 2375:2375
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    read_only: true
+    tmpfs:
+      - /run
+    networks:
+      proxy-net:
+      default:
+  swag:
+    container_name: swag
+    image: lscr.io/linuxserver/swag:latest
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      DNSPLUGIN: ${SWAG_DNSPLUGIN}
+      EXTRA_DOMAINS: ${SWAG_EXTRA_DOMAINS}
+      ONLY_SUBDOMAINS: ${SWAG_ONLY_SUBDOMAINS}
+      SUBDOMAINS: ${SWAG_SUBDOMAINS}
+      URL: ${SWAG_URL}
+      VALIDATION: ${SWAG_VALIDATION}
+      CERTPROVIDER: ${SWAG_CERTPROVIDER}
+      SWAG_AUTORELOAD: 'true'
+      DOCKER_MODS: linuxserver/mods:universal-docker|linuxserver/mods:swag-auto-uptime-kuma|linuxserver/mods:swag-cloudflare-real-ip|linuxserver/mods:swag-dashboard
+      DOCKER_HOST: tcp://socket-proxy:2375
+      UPTIME_KUMA_URL: http://uptime-kuma:3001
+      UPTIME_KUMA_USERNAME: ${UPTIME_KUMA_USERNAME}
+      UPTIME_KUMA_PASSWORD: ${UPTIME_KUMA_PASSWORD}
+    ports:
+      - ${SWAG_PORT_80}:80
+      - ${SWAG_PORT_443}:443/tcp
+      - ${SWAG_PORT_443}:443/udp
+      - 81:81 # For the Dashboard
+    volumes:
+      - ${DOCKERCONFDIR}/swag:/config
+    cap_add:
+      - NET_ADMIN
+    networks:
+      proxy-net:
+        ipv4_address: 172.20.0.4
+      default:
+  wireguard:
+    container_name: wireguard
+    image: lscr.io/linuxserver/wireguard:latest
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    environment:
+      SERVERURL: ${WIREGUARD_SERVER_URL}
+      SERVERPORT: ${WIREGUARD_SERVER_PORT_51820}
+      PEERS: ${WIREGUARD_PEERS}
+      PEERDNS: ${WIREGUARD_PEER_DNS}
+      INTERNAL_SUBNET: ${WIREGUARD_INTERNAL_SUBNET}
+      ALLOWEDIPS: ${WIREGUARD_ALLOWED_IPS}
+    ports:
+      - ${WIREGUARD_SERVER_PORT_51820}:51820/udp
+    volumes:
+      - ${DOCKERCONFDIR}/wireguard:/config
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+  wordpress:
+    container_name: wordpress
+    image: wordpress:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      WORDPRESS_DB_HOST: mariadb:3306
+      WORDPRESS_DB_USER: ${MYSQL_USER}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD}
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE}
+      WORDPRESS_DEBUG: true
+      WORDPRESS_DEBUG_LOG: true
+      WORDPRESS_DEBUG_DISPLAY: false
+
+    ports:
+      - ${WORDPRESS_PORT_80}:80
+      - ${WORDPRESS_PORT_443}:443
+    volumes:
+      - ${DOCKERCONFDIR}/wordpress:/var/www/html
+    networks:
+      - default
+volumes:
+  redis_data:
+networks:
+  proxy-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  lan-net:
+    driver: bridge

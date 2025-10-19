@@ -1,0 +1,24 @@
+services:
+  _base_common_template:
+    build: .
+    logging:
+      driver: json-file
+      options:
+        max-file: ${DOCKERLOGGING_MAXFILE}
+        max-size: ${DOCKERLOGGING_MAXSIZE}
+    environment:
+      PGID: ${PGID}
+      PUID: ${PUID}
+      TZ: ${TZ}
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    restart: unless-stopped
+
+  _monitored_template:
+    extends:
+      service: _base_common_template
+    labels:
+      swag.uptime-kuma.enabled: true
+      swag.uptime-kuma.monitor.interval: 69
+      swag.uptime-kuma.monitor.retryInterval: 69
+      swag.uptime-kuma.monitor.maxretries: 5

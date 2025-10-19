@@ -1,0 +1,72 @@
+services:
+  esphome:
+    container_name: esphome
+    image: ghcr.io/esphome/esphome
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    volumes:
+      - ${DOCKERCONFDIR}/esphome:/config
+    network_mode: host
+    privileged: true
+  homeassistant:
+    container_name: homeassistant
+    image: lscr.io/linuxserver/homeassistant
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${HOMEASSISTANT_PORT_8123}:8123
+    volumes:
+      - ${DOCKERCONFDIR}/homeassistant:/config
+      - ${DOCKERCONFDIR}/homeassistant/.ssh:/root/.ssh
+      - ${DOCKERCONFDIR}/homeassistant/custom:/custom-cont-init.d:ro
+    networks:
+      - default
+    depends_on:
+      - postgres
+      - zigbee2mqtt
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    user: ${PGID}:${PUID}
+    network_mode: host
+    volumes:
+      - ${DOCKERCONFDIR}/mosquitto:/mosquitto/config
+      - ${DOCKERCONFDIR}/mosquitto/data:/mosquitto/data
+      - ${DOCKERCONFDIR}/mosquitto/log:/mosquitto/log
+  nodered:
+    container_name: nodered
+    image: nodered/node-red
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${NODERED_PORT_1880}:1880
+    volumes:
+      - ${DOCKERCONFDIR}/nodered:/data
+    networks:
+      - default
+    depends_on:
+      - homeassistant
+      - mosquitto
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    volumes:
+      - ${DOCKERCONFDIR}/zigbee2mqtt:/app/data
+      - /run/udev:/run/udev:ro
+    ports:
+      - 8082:8080
+    devices:
+      - /dev/ttyACM0:/dev/ttyACM0
+    depends_on:
+      - "mosquitto"
+    networks:
+      - default

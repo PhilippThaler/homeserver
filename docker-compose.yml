@@ -1,0 +1,13 @@
+name: homelab-stack
+
+include: 
+  - ./core-services/docker-compose.yml
+  - ./home-automation/docker-compose.yml
+  - ./infrastructure/docker-compose.yml
+  - ./media/docker-compose.yml
+  - ./monitoring/docker-compose.yml
+
+networks:
+  default:
+    name: homelab_default_network
+    driver: bridge

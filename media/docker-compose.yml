@@ -1,0 +1,117 @@
+services:
+  jellyfin:
+    container_name: jellyfin
+    image: lscr.io/linuxserver/jellyfin
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    hostname: ${DOCKERHOSTNAME}
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+    ports:
+      - ${JELLYFIN_PORT_8096}:8096
+      - ${JELLYFIN_PORT_8920}:8920
+    volumes:
+      - ${DOCKERCONFDIR}/jellyfin:/config
+      - ${DOCKERCONFDIR}/jellyfin/custom:/custom-cont-init.d:ro
+      - ${DOCKERSTORAGEDIR}:/storage
+      - /tmp:/transcode
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
+    networks:
+      - default
+  jellyseerr:
+    container_name: jellyseerr
+    image: fallenbagel/jellyseerr:preview-seerr
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      LOG_LEVEL: debug
+    ports:
+      - 5055:5055
+    volumes:
+      - ${DOCKERCONFDIR}/jellyseerr:/app/config
+      - ${DOCKERSTORAGEDIR}:/storage
+    networks:
+      - default
+    depends_on:
+      - jellyfin
+  jfa-go:
+    container_name: jfa-go
+    image: hrfee/jfa-go:unstable
+    extends:
+      file: ../common.yml
+      service: _base_common_template
+    ports:
+      - '8056:8056'
+      - '8057:8057'
+    volumes:
+      - ${DOCKERCONFDIR}/jfa-go:/data
+      - ${DOCKERCONFDIR}/jellyfin:/jf
+    networks:
+      - default
+    depends_on:
+      - jellyfin
+  radarr:
+    container_name: radarr
+    image: lscr.io/linuxserver/radarr
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${RADARR_PORT_7878}:7878
+    volumes:
+      - ${DOCKERCONFDIR}/radarr:/config
+      - ${DOCKERSTORAGEDIR}:/storage
+    networks:
+      - default
+    depends_on:
+      - prowlarr
+  sonarr:
+    container_name: sonarr
+    image: lscr.io/linuxserver/sonarr
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${SONARR_PORT_8989}:8989
+    volumes:
+      - ${DOCKERCONFDIR}/sonarr:/config
+      - ${DOCKERSTORAGEDIR}:/storage
+    networks:
+      - default
+    depends_on:
+      - prowlarr
+  prowlarr:
+    container_name: prowlarr
+    image: lscr.io/linuxserver/prowlarr:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${PROWLARR_PORT_9696}:9696
+    volumes:
+      - ${DOCKERCONFDIR}/prowlarr:/config
+    networks:
+      - default
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=${WIREGUARD_PORT}
+    volumes:
+      - ${DOCKERCONFDIR}/qbittorrent:/config
+      - ${DOCKERSTORAGEDIR}/downloads/complete/:/downloads
+      - ${DOCKERSTORAGEDIR}:/storage
+    restart: unless-stopped
+    network_mode: service:gluetun
