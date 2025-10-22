@@ -221,7 +221,7 @@ services:
     image: lscr.io/linuxserver/swag:latest
     extends:
       file: ../common.yml
-      service: _base_common_template
+      service: _monitored_template
     environment:
       DNSPLUGIN: ${SWAG_DNSPLUGIN}
       EXTRA_DOMAINS: ${SWAG_EXTRA_DOMAINS}
