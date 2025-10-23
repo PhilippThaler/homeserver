@@ -24,7 +24,7 @@ services:
             - driver: nvidia
               capabilities: [gpu]
     networks:
-      - default
+      - media
   jellyseerr:
     container_name: jellyseerr
     image: fallenbagel/jellyseerr:preview-seerr
@@ -39,7 +39,7 @@ services:
       - ${DOCKERCONFDIR}/jellyseerr:/app/config
       - ${DOCKERSTORAGEDIR}:/storage
     networks:
-      - default
+      - media
     depends_on:
       - jellyfin
   jfa-go:
@@ -55,7 +55,7 @@ services:
       - ${DOCKERCONFDIR}/jfa-go:/data
       - ${DOCKERCONFDIR}/jellyfin:/jf
     networks:
-      - default
+      - media
     depends_on:
       - jellyfin
   radarr:
@@ -70,7 +70,7 @@ services:
       - ${DOCKERCONFDIR}/radarr:/config
       - ${DOCKERSTORAGEDIR}:/storage
     networks:
-      - default
+      - media
     depends_on:
       - prowlarr
   sonarr:
@@ -85,7 +85,7 @@ services:
       - ${DOCKERCONFDIR}/sonarr:/config
       - ${DOCKERSTORAGEDIR}:/storage
     networks:
-      - default
+      - media
     depends_on:
       - prowlarr
   prowlarr:
@@ -99,7 +99,7 @@ services:
     volumes:
       - ${DOCKERCONFDIR}/prowlarr:/config
     networks:
-      - default
+      - media
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -113,5 +113,4 @@ services:
       - ${DOCKERCONFDIR}/qbittorrent:/config
       - ${DOCKERSTORAGEDIR}/downloads/complete/:/downloads
       - ${DOCKERSTORAGEDIR}:/storage
-    restart: unless-stopped
     network_mode: service:gluetun

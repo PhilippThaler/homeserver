@@ -22,7 +22,8 @@ services:
       - ${DOCKERCONFDIR}/homeassistant/.ssh:/root/.ssh
       - ${DOCKERCONFDIR}/homeassistant/custom:/custom-cont-init.d:ro
     networks:
-      - default
+      - home-automation
+      - database-net
     depends_on:
       - postgres
       - zigbee2mqtt
@@ -49,7 +50,7 @@ services:
     volumes:
       - ${DOCKERCONFDIR}/nodered:/data
     networks:
-      - default
+      - home-automation
     depends_on:
       - homeassistant
       - mosquitto
@@ -69,4 +70,4 @@ services:
     depends_on:
       - "mosquitto"
     networks:
-      - default
+      - home-automation

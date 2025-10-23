@@ -15,7 +15,8 @@ services:
       - /mnt/data/docker/containers:/var/lib/docker/containers:ro
     command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy --disable-reporting
     networks:
-      - default
+      - monitoring
+      - socket-proxy
     depends_on:
       - loki
   grafana:
@@ -34,7 +35,8 @@ services:
       - ${DOCKERCONFDIR}/grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
     networks:
-      - default
+      - monitoring
+      - database-net
     depends_on:
       - postgres
       - loki
@@ -53,7 +55,7 @@ services:
       - loki-data:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - default
+      - monitoring
   node-exporter:
     container_name: node-exporter
     image: prom/node-exporter:latest
@@ -67,7 +69,7 @@ services:
        - --path.sysfs=/host/sys
        - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
     networks:
-      - default
+      - monitoring
   prometheus:
     container_name: prometheus
     image: prom/prometheus:latest
@@ -81,7 +83,7 @@ services:
       - prometheus-data:/prometheus
     command: --config.file=/etc/prometheus/prometheus.yaml --web.enable-remote-write-receiver
     networks:
-     - default
+     - monitoring
   uptime-kuma:
     container_name: uptime-kuma
     image: louislam/uptime-kuma
@@ -93,7 +95,8 @@ services:
     volumes:
       - ${DOCKERCONFDIR}/uptime-kuma:/app/data
     networks:
-      proxy-net:
+      - monitoring
+      - socket-proxy
   watchtower:
     container_name: watchtower
     image: containrrr/watchtower
@@ -104,7 +107,8 @@ services:
       DOCKER_HOST: tcp://socket-proxy:2375
       WATCHTOWER_CLEANUP: "true"
     networks:
-      - default
+      - monitoring
+      - socket-proxy
     depends_on:
       - socket-proxy
 volumes:

@@ -12,7 +12,7 @@ services:
       WAF_LISTS: ${CLOUDFLAREDDNS_WAF_LISTS}
       EMOJI: 'false'
     networks:
-      - default
+      - infrastructure
   filebrowser:
     container_name: filebrowser
     image: filebrowser/filebrowser
@@ -27,7 +27,7 @@ services:
       - ${DOCKERCONFDIR}/filebrowser/data:/database
       - ${DOCKERCONFDIR}/wordpress:/srv
     networks:
-      - default
+      - infrastructure
   gluetun:
     container_name: gluetun
     image: qmcgaw/gluetun
@@ -50,6 +50,8 @@ services:
       - 8080:8080
       - 6881:6881
       - 6881:6881/udp
+    networks:
+      - infrastructure
   mariadb:
     container_name: mariadb
     image: mariadb
@@ -66,7 +68,8 @@ services:
     volumes:
       - ${DOCKERCONFDIR}/mariadb:/var/lib/mysql
     networks:
-      - default
+      - infrastructure
+      - database-net
   phpmyadmin:
     container_name: phpmyadmin
     image: phpmyadmin:latest
@@ -78,7 +81,7 @@ services:
     ports:
       - ${PHPMYADMIN_PORT_80}:80
     networks:
-      - default
+      - infrastructure
   pihole:
     container_name: pihole
     image: pihole/pihole
@@ -108,9 +111,7 @@ services:
     cap_add:
       - NET_ADMIN
     networks:
-      proxy-net:
-        ipv4_address: 172.20.0.5
-      lan-net:
+      - infrastructure
   postgres:
     container_name: postgres
     image: timescale/timescaledb:latest-pg14
@@ -134,7 +135,8 @@ services:
           cpus: '2'
           memory: 2048M
     networks:
-      - default
+      - infrastructure
+      - database-net
   redis:
     container_name: redis
     image: redis:8.2-alpine
@@ -149,7 +151,8 @@ services:
       - 6379:6379
     command: redis-server /usr/local/etc/redis/redis.conf --requirepass ${REDIS_PASSWORD}
     networks:
-      - default
+      - infrastructure
+      - database-net
   samba:
     container_name: samba
     image: dperson/samba
@@ -170,7 +173,7 @@ services:
       - ${DOCKERCONFDIR}:/share/config
       - ${DOCKERSTORAGEDIR}:/share/storage
     networks:
-      - default
+      - infrastructure
   socket-proxy:
     container_name: socket-proxy
     image: lscr.io/linuxserver/socket-proxy:latest
@@ -191,7 +194,7 @@ services:
       - EVENTS=1 #optional
       - EXEC=0 #optional
       - IMAGES=1 #optional
-      - INFO=0 #optional
+      - INFO=1 #optional
       - LOG_LEVEL=info #optional
       - NETWORKS=1 #optional
       - NODES=0 #optional
@@ -213,9 +216,9 @@ services:
     read_only: true
     tmpfs:
       - /run
+    restart: always
     networks:
-      proxy-net:
-      default:
+      - socket-proxy
   swag:
     container_name: swag
     image: lscr.io/linuxserver/swag:latest
@@ -245,10 +248,15 @@ services:
       - ${DOCKERCONFDIR}/swag:/config
     cap_add:
       - NET_ADMIN
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
-      proxy-net:
-        ipv4_address: 172.20.0.4
-      default:
+      - socket-proxy
+      - core-services
+      - home-automation
+      - infrastructure
+      - media
+      - monitoring
   wireguard:
     container_name: wireguard
     image: lscr.io/linuxserver/wireguard:latest
@@ -285,21 +293,15 @@ services:
       WORDPRESS_DEBUG: true
       WORDPRESS_DEBUG_LOG: true
       WORDPRESS_DEBUG_DISPLAY: false
-
     ports:
       - ${WORDPRESS_PORT_80}:80
       - ${WORDPRESS_PORT_443}:443
     volumes:
       - ${DOCKERCONFDIR}/wordpress:/var/www/html
     networks:
-      - default
+      - infrastructure
+      - database-net
+    depends_on:
+      - mariadb
 volumes:
   redis_data:
-networks:
-  proxy-net:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/24
-  lan-net:
-    driver: bridge

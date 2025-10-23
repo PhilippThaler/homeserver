@@ -20,6 +20,9 @@ services:
       - ${BITWARDEN_PORT_80}:80
     volumes:
       - ${DOCKERCONFDIR}/vaultwarden:/data
+    networks:
+      - core-services
+      - database-net
     depends_on:
       - postgres
   nextcloud:
@@ -33,6 +36,9 @@ services:
     volumes:
       - ${DOCKERCONFDIR}/nextcloud:/config
       - ${DOCKERSTORAGEDIR}/nextcloud:/data
+    networks:
+      - core-services
+      - database-net
     depends_on:
       - postgres
       - redis

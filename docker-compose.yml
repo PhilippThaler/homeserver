@@ -8,6 +8,24 @@ include:
   - ./monitoring/docker-compose.yml
 
 networks:
-  default:
-    name: homelab_default_network
+  socket-proxy:
+    name: socket-proxy
+    driver: bridge
+  core-services:
+    name: core-services
+    driver: bridge
+  home-automation:
+    name: home-automation
+    driver: bridge
+  infrastructure:
+    name: infrastructure
+    driver: bridge
+  media:
+    name: media
+    driver: bridge
+  monitoring:
+    name: monitoring
+    driver: bridge
+  database-net:
+    name: database-net
     driver: bridge
