@@ -105,7 +105,9 @@ services:
       service: _base_common_template
     environment:
       DOCKER_HOST: tcp://socket-proxy:2375
-      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_CLEANUP: true
+      WATCHTOWER_INCLUDE_RESTARTING: true
+      WATCHTOWER_SCHEDULE: "0 0 2 * * *"
     networks:
       - monitoring
       - socket-proxy
