@@ -29,3 +29,6 @@ networks:
   database-net:
     name: database-net
     driver: bridge
+  gluetun-net:
+    name: gluetun-net
+    driver: bridge

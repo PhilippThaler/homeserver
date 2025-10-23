@@ -52,6 +52,7 @@ services:
       - 6881:6881/udp
     networks:
       - infrastructure
+      - gluetun-net
   mariadb:
     container_name: mariadb
     image: mariadb

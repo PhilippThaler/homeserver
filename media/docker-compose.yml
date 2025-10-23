@@ -71,6 +71,7 @@ services:
       - ${DOCKERSTORAGEDIR}:/storage
     networks:
       - media
+      - gluetun-net
     depends_on:
       - prowlarr
   sonarr:
@@ -86,6 +87,7 @@ services:
       - ${DOCKERSTORAGEDIR}:/storage
     networks:
       - media
+      - gluetun-net
     depends_on:
       - prowlarr
   prowlarr:
