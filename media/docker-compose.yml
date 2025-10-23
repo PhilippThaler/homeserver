@@ -96,12 +96,11 @@ services:
     extends:
       file: ../common.yml
       service: _monitored_template
-    ports:
-      - ${PROWLARR_PORT_9696}:9696
     volumes:
       - ${DOCKERCONFDIR}/prowlarr:/config
-    networks:
-      - media
+    network_mode: service:gluetun
+    depends_on:
+      - gluetun
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent

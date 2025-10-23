@@ -50,6 +50,7 @@ services:
       - 8080:8080
       - 6881:6881
       - 6881:6881/udp
+      - ${PROWLARR_PORT_9696}:9696
     networks:
       - infrastructure
       - gluetun-net
