@@ -23,6 +23,7 @@ services:
       - ${DOCKERCONFDIR}/homeassistant/custom:/custom-cont-init.d:ro
     networks:
       - home-automation
+      - media
       - database-net
     depends_on:
       - postgres
