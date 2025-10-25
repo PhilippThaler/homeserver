@@ -1,4 +1,17 @@
 services:
+  bazarr:
+    container_name: bazarr
+    image: lscr.io/linuxserver/bazarr:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    volumes:
+      - ${DOCKERCONFDIR}/bazarr:/config
+      - ${DOCKERSTORAGEDIR}:/storage
+    ports:
+      - ${BAZARR_PORT_6767}:6767
+    networks:
+      - media
   jellyfin:
     container_name: jellyfin
     image: lscr.io/linuxserver/jellyfin
