@@ -157,28 +157,27 @@ services:
       - database-net
   samba:
     container_name: samba
-    image: dperson/samba
+    image: dockurr/samba
     extends:
       file: ../common.yml
       service: _base_common_template
     environment:
-      NMBD: ${SAMBA_NMBD}
-      SHARE: ${SAMBA_SHARENAME};/${SAMBA_SHARENAME};yes;no;no;all;${SAMBA_USERNAME}
-      USER: ${SAMBA_USERNAME};${SAMBA_PASSWORD}
-      WORKGROUP: ${SAMBA_WORKGROUP}
+      NAME: ${SAMBA_SHARENAME}
+      USER: ${SAMBA_USERNAME}
+      PASS: ${SAMBA_PASSWORD}
     ports:
-      - ${SAMBA_PORT_137}:137/udp
-      - ${SAMBA_PORT_138}:138/udp
-      - ${SAMBA_PORT_139}:139/tcp
-      - ${SAMBA_PORT_445}:445/tcp
+      - ${SAMBA_PORT_445}:445
     volumes:
-      - ${DOCKERCONFDIR}:/share/config
-      - ${DOCKERSTORAGEDIR}:/share/storage
+      - ${DOCKERCONFDIR}/samba/smb.conf:/etc/samba/smb.conf:ro
+      - ${DOCKERCONFDIR}:/storage/config
+      - ${DOCKERSTORAGEDIR}:/storage/storage
     networks:
       - infrastructure
   socket-proxy:
     container_name: socket-proxy
     image: lscr.io/linuxserver/socket-proxy:latest
+    labels:
+      - "com.centurylinklabs.watchtower.monitor-only=true"
     extends:
       file: ../common.yml
       service: _base_common_template
