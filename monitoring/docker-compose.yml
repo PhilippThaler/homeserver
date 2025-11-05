@@ -13,7 +13,7 @@ services:
       - ${DOCKERCONFDIR}/alloy:/etc/alloy
       - ${DOCKERCONFDIR}/swag/log:/var/log/apps/swag
       - /mnt/data/docker/containers:/var/lib/docker/containers:ro
-    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy --disable-reporting
+    command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/ --disable-reporting
     networks:
       - monitoring
       - socket-proxy
@@ -54,20 +54,6 @@ services:
       - ${DOCKERCONFDIR}/loki/config.yaml:/etc/loki/local-config.yaml
       - loki-data:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - monitoring
-  node-exporter:
-    container_name: node-exporter
-    image: prom/node-exporter:latest
-    ports:
-      - 9100:9100
-    volumes:
-      - /:/host:ro,rslave
-    command:
-       - --path.rootfs=/host
-       - --path.procfs=/host/proc
-       - --path.sysfs=/host/sys
-       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
     networks:
       - monitoring
   prometheus:
