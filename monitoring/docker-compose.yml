@@ -19,6 +19,29 @@ services:
       - socket-proxy
     depends_on:
       - loki
+  diun:
+    container_name: diun
+    image: crazymax/diun:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    environment:
+      DIUN_WATCH_WORKERS: 20
+      DIUN_WATCH_SCHEDULE: 0 */6 * * *
+      DIUN_WATCH_JITTER: 30s
+      DIUN_PROVIDERS_DOCKER: true
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: true
+      DIUN_PROVIDERS_DOCKER_ENDPOINT: tcp://socket-proxy:2375
+      DIUN_NOTIF_PUSHOVER_TOKEN: ${DIUN_PUSHOVER_API_KEY}
+      DIUN_NOTIF_PUSHOVER_RECIPIENT: ${DIUN_PUSHOVER_USER_KEY}
+    volumes:
+      - "diun-data:/data"
+    command: serve
+    labels:
+      - "diun.enable=true"
+    networks:
+      - monitoring
+      - socket-proxy
   grafana:
     container_name: grafana
     image: grafana/grafana:latest
@@ -83,23 +106,23 @@ services:
     networks:
       - monitoring
       - socket-proxy
-  watchtower:
-    container_name: watchtower
-    image: containrrr/watchtower
-    extends:
-      file: ../common.yml
-      service: _base_common_template
-    environment:
-      DOCKER_HOST: tcp://socket-proxy:2375
-      WATCHTOWER_CLEANUP: true
-      WATCHTOWER_INCLUDE_RESTARTING: true
-      WATCHTOWER_SCHEDULE: "0 0 2 * * *"
-    networks:
-      - monitoring
-      - socket-proxy
-    depends_on:
-      - socket-proxy
+ #  watchtower:
+ #    container_name: watchtower
+ #    image: containrrr/watchtower
+ #    extends:
+ #      file: ../common.yml
+ #      service: _base_common_template
+ #    environment:
+ #      DOCKER_HOST: tcp://socket-proxy:2375
+ #      WATCHTOWER_CLEANUP: true
+ #      WATCHTOWER_SCHEDULE: "0 0 2 * * *"
+ #    networks:
+ #      - monitoring
+ #      - socket-proxy
+ #    depends_on:
+ #      - socket-proxy
 volumes:
+  diun-data:
   loki-data:
   prometheus-data:
   grafana-data:
