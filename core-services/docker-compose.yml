@@ -42,3 +42,19 @@ services:
     depends_on:
       - postgres
       - redis
+  opencloud:
+    container_name: opencloud
+    image: opencloudeu/opencloud-rolling:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    user: ${PUID}:${PGID}
+    environment:
+      OC_URL: ${OC_URL}
+    ports:
+      - ${OC_PORT_9200}:9200
+    volumes:
+      - ${DOCKERCONFDIR}/opencloud/opencloud-config:/etc/opencloud
+      - ${DOCKERSTORAGEDIR}/opencloud/opencloud-data:/var/lib/opencloud
+    networks:
+      - core-services
