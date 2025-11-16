@@ -12,6 +12,18 @@ services:
       - ${BAZARR_PORT_6767}:6767
     networks:
       - media
+  jackett:
+    container_name: jackett
+    image: lscr.io/linuxserver/jackett:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    volumes:
+      - ${DOCKERCONFDIR}/jackett:/config
+    ports:
+      - ${JACKETT_PORT_9117}:9117
+    networks:
+      - media
   jellyfin:
     container_name: jellyfin
     image: lscr.io/linuxserver/jellyfin
@@ -114,6 +126,18 @@ services:
     network_mode: service:gluetun
     depends_on:
       - gluetun
+  prowlarr-search:
+    container_name: prowlarr-search
+    image: lscr.io/linuxserver/prowlarr:latest
+    extends:
+      file: ../common.yml
+      service: _monitored_template
+    ports:
+      - ${PROWLARR_SEARCH_PORT_9696}:9696
+    volumes:
+      - ${DOCKERCONFDIR}/prowlarr-search:/config
+    networks:
+      - media
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
